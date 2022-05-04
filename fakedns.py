@@ -11,16 +11,19 @@ IP = '192.168.1.1'
 class DNSHandler(socketserver.BaseRequestHandler):
     def handle(self):
         socket = self.request[1]
-        data = self.request[0].strip()
-
+        data = self.request[0]
+ 
+        nonzeros = data.strip('\0'.encode())  # NOTE: might strip away leading zero as well.. but fine-ish for this check
         # If request doesn't even contain full header, don't respond.
-        if len(data) < DNS_HEADER_LENGTH:
+        if len(nonzeros) < DNS_HEADER_LENGTH:
+            print("note: data length too small", len(data), len(nonzeros))
             return
-
+        
         # Try to read questions - if they're invalid, don't respond.
         try:
             all_questions = self.dns_extract_questions(data)
         except IndexError:
+            print("note: IndexError")
             return
 
         # Filter only those questions, which have QTYPE=A and QCLASS=IN
